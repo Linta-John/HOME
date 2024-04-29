@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // Changed from 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:p/components/tenantnavigation.dart';
 import 'package:p/tenantnav/accommodationscreen.dart';
 import 'package:p/tenantnav/filter.dart';
@@ -70,85 +70,55 @@ class _habhomeState extends State<habhome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Image.asset(
-            'assets/image/home1.jpeg',
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 15.0),
-                margin: EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 15.0),
+            margin: EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
                 ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search Accommodations',
-                    prefixIcon: Icon(Icons.search),
-                    suffixIcon: IconButton(
-                      icon: SvgPicture.asset(
-                        'assets/icon/sliders-solid.svg',
-                        width: 20,
-                        height: 20,
-                      ),
-                      onPressed: () async {
-                        var filters = await Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => FilterPage()),
-                        );
-                        if (filters != null) {
-                          setState(() {
-                            selectedRoomType = filters['selectedRoomType'];
-                            selectedRent = filters[
-                                'selectedRent']; // Corrected the variable name
-                          });
-                        }
-                      },
-                    ),
-                    border: InputBorder.none,
+              ],
+            ),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search Accommodations',
+                prefixIcon: Icon(Icons.search),
+                suffixIcon: IconButton(
+                  icon: SvgPicture.asset(
+                    'assets/icon/sliders-solid.svg',
+                    width: 20,
+                    height: 20,
                   ),
+                  onPressed: () async {
+                    var filters = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => FilterPage()),
+                    );
+                    if (filters != null) {
+                      setState(() {
+                        selectedRoomType = filters['selectedRoomType'];
+                        selectedRent = filters[
+                            'selectedRent']; // Corrected the variable name
+                      });
+                    }
+                  },
                 ),
+                border: InputBorder.none,
               ),
             ),
           ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
+          Expanded(
             child: Container(
-              height: MediaQuery.of(context).size.height * 0.6,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(25.0),
-                  topRight: Radius.circular(25.0),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 5,
-                    blurRadius: 7,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
+              color: Colors.white,
               child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: fetchDetails(),
                 builder: (BuildContext context,
@@ -161,26 +131,61 @@ class _habhomeState extends State<habhome> {
                     return Center(child: CircularProgressIndicator());
                   }
                   List<Map<String, dynamic>> documents = snapshot.data!;
-                  return documents.isEmpty
-                      ? Center(child: Text('No results found'))
-                      : ListView.builder(
-                          itemCount: documents.length,
-                          itemBuilder: (context, index) {
-                            var doc = documents[index];
-                            return ListTile(
-                              title: Text(doc['accommodationName'] ?? 'N/A'),
-                              subtitle: Text(
-                                  '${doc['address'] ?? 'N/A'}, ${doc['cityName'] ?? 'N/A'}, ${doc['districtName'] ?? 'N/A'}, ${doc['stateName'] ?? 'N/A'}'),
-                              onTap: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            accommodationscreen())); // Changed to AccommodationScreen
-                              },
-                            );
-                          },
-                        );
+                  return documents.isEmpty?Center(child:Text('No results found')):
+                  GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: documents.length,
+                    itemBuilder: (context, index) {
+                      var doc = documents[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                             MaterialPageRoute(
+                                builder: (context) => accommodationscreen(accommodationId: doc['accommodationId']),
+                              ),
+                          );
+                        },
+                        child: Card(
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(10),
+                                    topRight: Radius.circular(10),
+                                  ),
+                                  child: Image.network(
+                                    doc['imageUrls'][0],
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.all(8),
+                                child: Text(
+                                  doc['accommodationName'] ?? 'N/A',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
             ),
