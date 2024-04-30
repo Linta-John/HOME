@@ -50,6 +50,15 @@ class _update1State extends State<update1> {
 
   Future<void> _addNewRoom() async {
     try {
+      // Fetch the accommodation document
+      var accommodationDoc = await FirebaseFirestore.instance
+          .collection('accommodation')
+          .doc(widget.accommodationId)
+          .get();
+
+      // Get the gender from the accommodation document
+      String gender = accommodationDoc['gender'];
+
       int length = (await roomdetailsCollection.get()).docs.length;
       await roomdetailsCollection.add({
         'name': 'ROOMS ${length + 1}',
@@ -57,6 +66,7 @@ class _update1State extends State<update1> {
         'rent': '2000',
         'availability': 'Unavailable',
         'accommodation_id': widget.accommodationId,
+        'gender': gender, // Add gender to the room details
       });
     } catch (e) {
       print('Error adding room: $e');
