@@ -1,9 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:p/components/tenantnavigation.dart';
 import 'package:p/tenantnav/accommodationscreen.dart';
-import 'package:p/tenantnav/filter.dart';
+import 'package:p/tenantnav/filter.dart'; // Import the FilterPage
 
 class habhome extends StatefulWidget {
   @override
@@ -11,16 +10,15 @@ class habhome extends StatefulWidget {
 }
 
 class _habhomeState extends State<habhome> {
-  var selectedRoomType = '';
-  var selectedRent = '';
+  String selectedRoomType = '';
+  String selectedRent = '';
+  String selectedGenderType = '';
 
   late final Stream<List<DocumentSnapshot<Map<String, dynamic>>>> _stream;
   final CollectionReference _accommodationReference =
       FirebaseFirestore.instance.collection('accommodation');
   final CollectionReference _roomdetailsReference =
       FirebaseFirestore.instance.collection('roomdetails');
-
-  @override
   void initState() {
     super.initState();
     _stream = _roomdetailsReference
@@ -37,10 +35,55 @@ class _habhomeState extends State<habhome> {
     if (selectedRoomType != null &&
         selectedRoomType.isNotEmpty &&
         selectedRent != null &&
-        selectedRent.isNotEmpty) {
+        selectedRent.isNotEmpty &&
+        selectedGenderType != null &&
+        selectedGenderType.isNotEmpty) {
       roomSnapshot = await _roomdetailsReference
           .where('availability', isEqualTo: 'Available')
           .where('type', isEqualTo: selectedRoomType)
+          .where('rent', isEqualTo: selectedRent)
+          .where('gender', isEqualTo: selectedGenderType)
+          .get();
+    } else if (selectedRoomType != null &&
+        selectedRoomType.isNotEmpty &&
+        selectedGenderType != null &&
+        selectedGenderType.isNotEmpty) {
+      roomSnapshot = await _roomdetailsReference
+          .where('availability', isEqualTo: 'Available')
+          .where('type', isEqualTo: selectedRoomType)
+          .where('gender', isEqualTo: selectedGenderType)
+          .get();
+    } else if (selectedRent != null &&
+        selectedRent.isNotEmpty &&
+        selectedGenderType != null &&
+        selectedGenderType.isNotEmpty) {
+      roomSnapshot = await _roomdetailsReference
+          .where('availability', isEqualTo: 'Available')
+          .where('rent', isEqualTo: selectedRent)
+          .where('gender', isEqualTo: selectedGenderType)
+          .get();
+    } else if (selectedRent != null &&
+        selectedRent.isNotEmpty &&
+        selectedRoomType != null &&
+        selectedRoomType.isNotEmpty) {
+      roomSnapshot = await _roomdetailsReference
+          .where('availability', isEqualTo: 'Available')
+          .where('rent', isEqualTo: selectedRent)
+          .where('type', isEqualTo: selectedRoomType)
+          .get();
+    } else if (selectedGenderType != null && selectedGenderType.isNotEmpty) {
+      roomSnapshot = await _roomdetailsReference
+          .where('availability', isEqualTo: 'Available')
+          .where('gender', isEqualTo: selectedGenderType)
+          .get();
+    } else if (selectedRoomType != null && selectedRoomType.isNotEmpty) {
+      roomSnapshot = await _roomdetailsReference
+          .where('availability', isEqualTo: 'Available')
+          .where('type', isEqualTo: selectedRoomType)
+          .get();
+    } else if (selectedRent != null && selectedRent.isNotEmpty) {
+      roomSnapshot = await _roomdetailsReference
+          .where('availability', isEqualTo: 'Available')
           .where('rent', isEqualTo: selectedRent)
           .get();
     } else {
@@ -93,11 +136,7 @@ class _habhomeState extends State<habhome> {
                 hintText: 'Search Accommodations',
                 prefixIcon: Icon(Icons.search),
                 suffixIcon: IconButton(
-                  icon: SvgPicture.asset(
-                    'assets/icon/sliders-solid.svg',
-                    width: 20,
-                    height: 20,
-                  ),
+                  icon: Icon(Icons.filter_list),
                   onPressed: () async {
                     var filters = await Navigator.push(
                       context,
@@ -106,8 +145,8 @@ class _habhomeState extends State<habhome> {
                     if (filters != null) {
                       setState(() {
                         selectedRoomType = filters['selectedRoomType'];
-                        selectedRent = filters[
-                            'selectedRent']; // Corrected the variable name
+                        selectedRent = filters['selectedRent'];
+                        selectedGenderType = filters['selectedGenderType'];
                       });
                     }
                   },
@@ -131,61 +170,65 @@ class _habhomeState extends State<habhome> {
                     return Center(child: CircularProgressIndicator());
                   }
                   List<Map<String, dynamic>> documents = snapshot.data!;
-                  return documents.isEmpty?Center(child:Text('No results found')):
-                  GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: documents.length,
-                    itemBuilder: (context, index) {
-                      var doc = documents[index];
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                             MaterialPageRoute(
-                                builder: (context) => accommodationscreen(accommodationId: doc['accommodationId']),
-                              ),
-                          );
-                        },
-                        child: Card(
-                          elevation: 5,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                  return documents.isEmpty
+                      ? Center(child: Text('No results found'))
+                      : GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(10),
-                                    topRight: Radius.circular(10),
+                          itemCount: documents.length,
+                          itemBuilder: (context, index) {
+                            var doc = documents[index];
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => accommodationscreen(
+                                        accommodationId:
+                                            doc['accommodationId']),
                                   ),
-                                  child: Image.network(
-                                    doc['imageUrls'][0],
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                  ),
+                                );
+                              },
+                              child: Card(
+                                elevation: 5,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(10),
+                                          topRight: Radius.circular(10),
+                                        ),
+                                        child: Image.network(
+                                          doc['imageUrls'][0],
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: Text(
+                                        doc['accommodationName'] ?? 'N/A',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Padding(
-                                padding: EdgeInsets.all(8),
-                                child: Text(
-                                  doc['accommodationName'] ?? 'N/A',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
+                            );
+                          },
+                        );
                 },
               ),
             ),
