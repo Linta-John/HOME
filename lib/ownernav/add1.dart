@@ -95,7 +95,6 @@ class _add1State extends State<add1> {
         'address': _addressController.text,
         'rules': _rulesController.text,
         'gender': genderPreference,
-
         'amenities': amenities,
         'userId': userId,
         'imageUrls': imageUrls, // Include the imageUrls list here
@@ -143,7 +142,7 @@ class _add1State extends State<add1> {
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'NAME',
+                labelText: 'OWNER NAME',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -159,7 +158,7 @@ class _add1State extends State<add1> {
             TextFormField(
               controller: _addressController,
               decoration: InputDecoration(
-                labelText: 'ADDRESS',
+                labelText: 'ACCOMODATION ADDRESS',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -176,7 +175,7 @@ class _add1State extends State<add1> {
             TextFormField(
               controller: _stateNameController,
               decoration: InputDecoration(
-                labelText: 'STATE',
+                labelText: 'ACCOMODATION STATE',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -193,7 +192,7 @@ class _add1State extends State<add1> {
             TextFormField(
               controller: _districtNameController,
               decoration: InputDecoration(
-                labelText: 'DISTRICT',
+                labelText: 'ACCOMODATION DISTRICT',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -209,7 +208,7 @@ class _add1State extends State<add1> {
             TextFormField(
               controller: _cityNameController,
               decoration: InputDecoration(
-                labelText: 'CITY',
+                labelText: 'ACCOMODATION CITY',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -232,7 +231,10 @@ class _add1State extends State<add1> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter phone ';
+                  return 'Please enter phone number';
+                } else if (value.length != 10 ||
+                    !RegExp(r'^[0-9]+$').hasMatch(value)) {
+                  return 'Phone number should contain exactly 10 digits';
                 }
                 return null;
               },
