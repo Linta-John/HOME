@@ -8,28 +8,55 @@ import 'package:p/ownernav/update.dart';
 
 class home1 extends StatefulWidget {
   @override
-  _home1State createState() => _home1State();
+  _Home1State createState() => _Home1State();
 }
 
-class _home1State extends State<home1> {
-  List<Map<String, dynamic>> accomodations = [];
+class _Home1State extends State<home1> {
+  String userName = '';
+  List<Map<String, dynamic>> accommodations = [];
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    fetchUserData();
     fetchStations();
+  }
+
+  void fetchUserData() async {
+    try {
+      String name = await fetchUserName();
+      setState(() {
+        userName = name;
+      });
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
+
+  Future<String> fetchUserName() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        var userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+        return userDoc['name'] ?? '';
+      } catch (e) {
+        throw Exception('Error fetching user data: $e');
+      }
+    }
+    throw Exception('Current user is null');
   }
 
   void fetchStations() async {
     User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       print('No user logged in');
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
 
@@ -38,81 +65,66 @@ class _home1State extends State<home1> {
       var querySnapshot =
           await collection.where('userId', isEqualTo: currentUser.uid).get();
 
-      var fetchedAccomodations = [
-        for (var doc in querySnapshot.docs)
-          {
-            ...doc.data(),
-            'id': doc.id,
-          }
-      ];
+      var fetchedAccommodations = querySnapshot.docs.map((doc) {
+        return {
+          ...doc.data(),
+          'id': doc.id,
+        };
+      }).toList();
 
-      if (mounted) {
-        setState(() {
-          accomodations = fetchedAccomodations;
-          isLoading = false;
-        });
-      }
+      setState(() {
+        accommodations = fetchedAccommodations;
+        isLoading = false;
+      });
     } catch (e) {
-      print('Error fetching accomodations: $e');
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      print('Error fetching accommodations: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WELCOME...', style: TextStyle(color: Colors.black)),
+        title:
+            Text('Welcome  $userName', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 1,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : ListView.builder(
-              itemCount: accomodations.length + 1,
+              itemCount: accommodations.length,
               itemBuilder: (BuildContext context, int index) {
-                if (index == accomodations.length) {
-                  return InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const add1(),
-                        ),
-                      );
-                    },
-                  );
-                } else {
-                  var acco = accomodations[index];
-                  return Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.home),
-                      title: Text(
-                          acco['accommodationName'] ?? 'Unknown Accommodation'),
-                      subtitle: Text(acco['name'] ?? 'No name Info'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => accdetails(
-                                accommodationId: acco['id'],
-                              ),
+                var acco = accommodations[index];
+                return Card(
+                  child: ListTile(
+                    leading: Icon(Icons.home),
+                    title: Text(
+                        acco['accommodationName'] ?? 'Unknown Accommodation'),
+                    subtitle: Text(acco['name'] ?? 'No name Info'),
+                    trailing: IconButton(
+                      icon: Icon(Icons.chevron_right),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => accdetails(
+                              accommodationId: acco['id'],
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                }
+                  ),
+                );
               },
             ),
       bottomNavigationBar: BottomNavigation(),
     );
   }
 }
+
