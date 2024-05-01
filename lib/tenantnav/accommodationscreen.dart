@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:p/tenantnav/bookslot.dart';
 
 class accommodationscreen extends StatefulWidget {
   final String accommodationId;
   final String Rent;
   final String Gender;
   final String Type;
-  const accommodationscreen(
-      {required this.accommodationId,
-      required this.Rent,
-      required this.Gender,
-      required this.Type});
+
+  const accommodationscreen({
+    required this.accommodationId,
+    required this.Rent,
+    required this.Gender,
+    required this.Type,
+  });
 
   @override
   _accommodationscreenState createState() => _accommodationscreenState();
@@ -39,25 +41,31 @@ class _accommodationscreenState extends State<accommodationscreen> {
   }
 
   Future<void> fetchDetails() async {
-    DocumentSnapshot snapshot = await FirebaseFirestore.instance
-        .collection('accommodation')
-        .doc(widget.accommodationId)
-        .get();
-    if (snapshot.exists) {
-      Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
-      setState(() {
-        accommodationName = data?['accommodationName'] ?? '';
-        address = data?['address'] ?? '';
-        cityName = data?['cityName'] ?? ''; // Correct assignment
-        districtName = data?['districtName'] ?? ''; // Correct assignment
-        stateName = data?['stateName'] ?? ''; // Correct assignment
-        name = data?['name'] ?? ''; // Correct assignment
-        phone = data?['phone'] ?? '';
-        rules = data?['rules'] ?? '';
-        amenities = List<String>.from(data?['amenities'] ?? []);
-        imageUrls = List<String>.from(data?['imageUrls'] ?? []);
-        isLoading = false;
-      });
+    try {
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('accommodation')
+          .doc(widget.accommodationId)
+          .get();
+
+      if (snapshot.exists) {
+        Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+
+        setState(() {
+          accommodationName = data?['accommodationName'] ?? '';
+          address = data?['address'] ?? '';
+          cityName = data?['cityName'] ?? '';
+          districtName = data?['districtName'] ?? '';
+          stateName = data?['stateName'] ?? '';
+          name = data?['name'] ?? '';
+          phone = data?['phone'] ?? '';
+          rules = data?['rules'] ?? '';
+          amenities = List<String>.from(data?['amenities'] ?? []);
+          imageUrls = List<String>.from(data?['imageUrls'] ?? []);
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching details: $e');
     }
   }
 
@@ -66,7 +74,6 @@ class _accommodationscreenState extends State<accommodationscreen> {
       var collection = FirebaseFirestore.instance.collection('roomdetails');
       var query = collection.where('availability', isEqualTo: 'Available');
 
-      // Add filters based on provided parameters
       if (widget.Type.isNotEmpty) {
         query = query.where('type', isEqualTo: widget.Type);
       }
@@ -83,13 +90,12 @@ class _accommodationscreenState extends State<accommodationscreen> {
 
       var querySnapshot = await query.get();
 
-      var fetchedRoomdetails = [
-        for (var doc in querySnapshot.docs)
-          {
-            ...doc.data(),
-            'id': doc.id,
-          }
-      ];
+      var fetchedRoomdetails = querySnapshot.docs.map((doc) {
+        return {
+          'id': doc.id,
+          ...doc.data(),
+        };
+      }).toList();
 
       if (mounted) {
         setState(() {
@@ -98,11 +104,31 @@ class _accommodationscreenState extends State<accommodationscreen> {
       }
     } catch (e) {
       print('Error fetching rooms: $e');
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+    }
+  }
+
+  void navigateToBookSlot(String roomId, String accommodationId) async {
+    try {
+      var roomDoc = await FirebaseFirestore.instance
+          .collection('roomdetails')
+          .doc(roomId)
+          .get();
+
+      if (roomDoc.exists) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => bookslot(
+              accommodationId: accommodationId,
+              roomId: roomId,
+            ),
+          ),
+        );
+      } else {
+        print('Room document not found');
       }
+    } catch (e) {
+      print('Error navigating to book slot: $e');
     }
   }
 
@@ -116,7 +142,6 @@ class _accommodationscreenState extends State<accommodationscreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display images
             if (imageUrls.isNotEmpty)
               SizedBox(
                 height: 200,
@@ -130,7 +155,6 @@ class _accommodationscreenState extends State<accommodationscreen> {
                   },
                 ),
               ),
-            // Display accommodation details
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -181,7 +205,6 @@ class _accommodationscreenState extends State<accommodationscreen> {
                     ),
                   ),
                   SizedBox(height: 4),
-                  // Display amenities
                   for (var amenity in amenities)
                     Text(
                       '- $amenity',
@@ -190,27 +213,27 @@ class _accommodationscreenState extends State<accommodationscreen> {
                 ],
               ),
             ),
-            // Display available rooms
-            // Display available rooms
             if (roomdetails.isNotEmpty)
               ListView.builder(
                 shrinkWrap: true,
                 itemCount: roomdetails.length,
                 itemBuilder: (context, index) {
                   var room = roomdetails[index];
-                  // Check if the room matches the parameters passed from the previous page
-
-                  // Display room details
-                  return Card(
-                    child: ListTile(
-                      title: Text(room['name'] ?? 'Loading...'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(room['type'] ?? 'Loading...'),
-                          Text(room['rent'] ?? 'Loading...'),
-                          Text(room['gender'] ?? 'Loading...'),
-                        ],
+                  return GestureDetector(
+                    onTap: () {
+                      navigateToBookSlot(room['id'], room['accommodation_id']);
+                    },
+                    child: Card(
+                      child: ListTile(
+                        title: Text(room['name'] ?? 'Loading...'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(room['type'] ?? 'Loading...'),
+                            Text(room['rent'] ?? 'Loading...'),
+                            Text(room['gender'] ?? 'Loading...'),
+                          ],
+                        ),
                       ),
                     ),
                   );
