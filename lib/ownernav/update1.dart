@@ -23,7 +23,24 @@ class _update1State extends State<update1> {
 
   Future<void> _updateRoomType(String documentId, String newValue) async {
     try {
+      int count;
+      if (newValue == 'Single Room') {
+        count = 1;
+      } else if (newValue == 'Double Room') {
+        count = 2;
+      } else if (newValue == 'Triple Room') {
+        count = 3;
+      }
+      else if (newValue == 'Multi Room') {
+        count = 4;
+      }
+       else {
+        // Default to Single Room if the type is not recognized
+        count = 1;
+      }
+
       await roomdetailsCollection.doc(documentId).update({'type': newValue});
+      await roomdetailsCollection.doc(documentId).update({'count': count});
     } catch (e) {
       print('Error updating room type: $e');
     }
@@ -67,6 +84,7 @@ class _update1State extends State<update1> {
         'availability': 'Unavailable',
         'accommodation_id': widget.accommodationId,
         'gender': gender, // Add gender to the room details
+        'count': 1, // Initialize count field to 1 for new rooms
       });
     } catch (e) {
       print('Error adding room: $e');
