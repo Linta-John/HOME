@@ -64,13 +64,24 @@ class _accommodationscreenState extends State<accommodationscreen> {
   void fetchRooms() async {
     try {
       var collection = FirebaseFirestore.instance.collection('roomdetails');
-      var querySnapshot = await collection
-          .where('availability', isEqualTo: 'Available')
-          .where('type', isEqualTo: widget.Type)
-          .where('gender', isEqualTo: widget.Gender)
-          .where('rent', isEqualTo: widget.Rent)
-          .where('accommodation_id', isEqualTo: widget.accommodationId)
-          .get();
+      var query = collection.where('availability', isEqualTo: 'Available');
+
+      // Add filters based on provided parameters
+      if (widget.Type.isNotEmpty) {
+        query = query.where('type', isEqualTo: widget.Type);
+      }
+      if (widget.Gender.isNotEmpty) {
+        query = query.where('gender', isEqualTo: widget.Gender);
+      }
+      if (widget.Rent.isNotEmpty) {
+        query = query.where('rent', isEqualTo: widget.Rent);
+      }
+      if (widget.accommodationId.isNotEmpty) {
+        query =
+            query.where('accommodation_id', isEqualTo: widget.accommodationId);
+      }
+
+      var querySnapshot = await query.get();
 
       var fetchedRoomdetails = [
         for (var doc in querySnapshot.docs)
