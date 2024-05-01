@@ -3,7 +3,9 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:p/ownernav/update1.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class update extends StatefulWidget {
   final String accommodationId;
@@ -11,13 +13,13 @@ class update extends StatefulWidget {
   const update({Key? key, required this.accommodationId}) : super(key: key);
 
   @override
-  _updateState createState() => _updateState();
+  _UpdateState createState() => _UpdateState();
 }
 
-class _updateState extends State<update> {
+class _UpdateState extends State<update> {
   final _formKey = GlobalKey<FormState>();
   final _accommodationNameController = TextEditingController();
-  final _NameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _rulesController = TextEditingController();
 
@@ -25,11 +27,44 @@ class _updateState extends State<update> {
       FirebaseFirestore.instance.collection('accommodation');
 
   List<String> amenities = [];
+  List<String> imageUrls = [];
 
   @override
   void initState() {
     super.initState();
     fetchDetails();
+  }
+
+  Future<void> _pickImage() async {
+    ImagePicker imagePicker = ImagePicker();
+    XFile? file = await imagePicker.pickImage(source: ImageSource.gallery);
+
+    if (file == null) return;
+
+    try {
+      String uniqueFileName = DateTime.now().millisecondsSinceEpoch.toString();
+      Reference referenceRoot = FirebaseStorage.instance.ref();
+      Reference referenceDirImages = referenceRoot.child('images');
+      Reference referenceImageToUpload =
+          referenceDirImages.child(uniqueFileName);
+
+      if (kIsWeb) {
+        Uint8List? data = await file.readAsBytes();
+        await referenceImageToUpload.putData(data);
+      } else {
+        File imageFile = File(file.path);
+        await referenceImageToUpload.putFile(imageFile);
+      }
+
+      String imageUrl = await referenceImageToUpload.getDownloadURL();
+      // Add imageUrl to a list to store all uploaded image URLs
+      setState(() {
+        imageUrls.add(
+            imageUrl); // Assume you have declared List<String> imageUrls = []; at the top
+      });
+    } catch (error) {
+      print(error);
+    }
   }
 
   Future<void> _submitDetails() async {
@@ -44,11 +79,12 @@ class _updateState extends State<update> {
 
       Map<String, dynamic> dataToSend = {
         'accommodationName': _accommodationNameController.text,
-        'name': _NameController.text,
+        'name': _nameController.text,
         'phone': _phoneController.text,
         'rules': _rulesController.text,
         'amenities': amenities,
         'userId': currentUser.uid, // Add the current user's ID
+        'imageUrls': imageUrls, // Include the imageUrls list here
       };
 
       // Fetch the existing document from Firestore
@@ -88,10 +124,11 @@ class _updateState extends State<update> {
     if (snapshot.exists) {
       Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
       _accommodationNameController.text = data['accommodationName'] ?? '';
-      _NameController.text = data['name'] ?? '';
+      _nameController.text = data['name'] ?? '';
       _phoneController.text = data['phone'] ?? '';
       _rulesController.text = data['rules'] ?? '';
       amenities = List<String>.from(data['amenities'] ?? []);
+      imageUrls = List<String>.from(data['imageUrls'] ?? []);
       setState(() {});
     }
   }
@@ -128,7 +165,7 @@ class _updateState extends State<update> {
             ),
             SizedBox(height: 10),
             TextFormField(
-              controller: _NameController,
+              controller: _nameController,
               decoration: InputDecoration(
                 labelText: 'OWNER NAME',
                 border: OutlineInputBorder(
@@ -251,6 +288,39 @@ class _updateState extends State<update> {
                 );
               },
               child: Text('Add Amenities'),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.add_a_photo),
+              label: const Text('Upload Image'),
+              onPressed: _pickImage,
+            ),
+            Wrap(
+              spacing: 8.0,
+              children: imageUrls.asMap().entries.map((entry) {
+                int index = entry.key;
+                String imageUrl = entry.value;
+
+                return Stack(
+                  alignment: Alignment.topRight,
+                  children: [
+                    Image.network(
+                      imageUrl,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.cancel),
+                      onPressed: () {
+                        setState(() {
+                          imageUrls.removeAt(index);
+                        });
+                      },
+                    ),
+                  ],
+                );
+              }).toList(),
             ),
             SizedBox(height: 10),
             ElevatedButton(
