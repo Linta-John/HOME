@@ -128,8 +128,11 @@ class _update1State extends State<update1> {
                       ),
                       DropdownButtonFormField<String>(
                         value: roomDetails['availability'],
-                        items: <String>['Available', 'Unavailable']
-                            .map<DropdownMenuItem<String>>((String value) {
+                        items: <String>[
+                          'Available',
+                          'Unavailable',
+                          'Accomodated'
+                        ].map<DropdownMenuItem<String>>((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
                             child: Text(value),
