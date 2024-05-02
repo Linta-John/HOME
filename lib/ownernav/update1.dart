@@ -30,11 +30,9 @@ class _update1State extends State<update1> {
         count = 2;
       } else if (newValue == 'Triple Room') {
         count = 3;
-      }
-      else if (newValue == 'Multi Room') {
-        count = 4;
-      }
-       else {
+      } else if (newValue == 'Accommodated') {
+        count = 0;
+      } else {
         // Default to Single Room if the type is not recognized
         count = 1;
       }
@@ -149,7 +147,7 @@ class _update1State extends State<update1> {
                         items: <String>[
                           'Available',
                           'Unavailable',
-                          'Accomodated'
+                          'Accommodated'
                         ].map<DropdownMenuItem<String>>((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
